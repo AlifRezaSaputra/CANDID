@@ -8,7 +8,7 @@
 
 # Configuration
 TARGET_FILE="/etc/nginx/sites-available/default" #other crucial files can be added
-MASTER_IP="192.168.1.19" #depend on your master server
+MASTER_IP="192.168.1.12" #depend on your master server
 MASTER_PORT="7777" #can be adjusted to your own preference
 SERVANT_IP=$(hostname -I | awk '{print $1}')
 LOG_PREFIX="[CANDID-SERVANT]"
@@ -18,18 +18,23 @@ echo "$LOG_PREFIX The signal will be sent to the Master: $MASTER_IP:$MASTER_PORT
 echo "$LOG_PREFIX Servant IP: $SERVANT_IP"
 echo "---------------------------------------------------"
 
-# Main loop
-while true; do
-    # Event Listener
-    EVENT=$(inotifywait -e modify,attrib --format '%e' "$TARGET_FILE" 2>/dev/null)
+inotifywait -m -e modify,attrib --format '%e' "$TARGET_FILE" 2>/dev/null | while read -r EVENT; do
 
     TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
     echo "$LOG_PREFIX [$TIMESTAMP] Event detected: $EVENT on $TARGET_FILE"
 
-    # HTTP Payload
-    PAYLOAD="servant_ip=$SERVANT_IP&target_file=$TARGET_FILE&event=$EVENT&timestamp=$TIMESTAMP"
+    if [ -f "$TARGET_FILE" ]; then
+        CURRENT_HASH=$(sha256sum "$TARGET_FILE" | awk '{print $1}')
+        CURRENT_PERM=$(stat -c "%a" "$TARGET_FILE")
+    else
+        CURRENT_HASH="FILE_DELETED"
+        CURRENT_PERM="000"
+    fi
 
-    echo "$LOG_PREFIX Sending to Master..."
+    # HTTP Payload
+    PAYLOAD="servant_ip=$SERVANT_IP&target_file=$TARGET_FILE&event=$EVENT&hash=$CURRENT_HASH&permission=$CURRENT_PERM&timestamp=$TIMESTAMP"
+
+    echo "$LOG_PREFIX Telemetry gathered, sending to Master..."
 
     RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
         --max-time 5 \

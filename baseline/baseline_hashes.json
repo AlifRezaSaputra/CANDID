@@ -1,0 +1,7 @@
+{
+    "nginx_default": {
+        "path": "/etc/nginx/sites-available/default",
+        "hash": "ce0901350a021608139b5639cf4ccd7717bef8c3a9e4f79031eb46386b67b03f",
+        "permission": "644"
+    }
+}
