@@ -1,4 +1,3 @@
-# Jangan pernah commit ini
 *.log
 logs/
 *.env
@@ -8,7 +7,7 @@ id_rsa*
 candid_key*
 config.ini
 secrets.py
-telegram_config.py
+telegramConfig.py
 __pycache__/
 *.pyc
 .env
